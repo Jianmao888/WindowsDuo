@@ -14,7 +14,7 @@
   <Identity
     Name="bef70aca-a6a9-4c68-8578-d2bfd7e37a2a"
     Publisher="CN=Jianmao"
-    Version="1.0.14.0" />
+    Version="1.0.0.0" />
 
   <mp:PhoneIdentity PhoneProductId="bef70aca-a6a9-4c68-8578-d2bfd7e37a2a" PhonePublisherId="00000000-0000-0000-0000-000000000000"/>
 
