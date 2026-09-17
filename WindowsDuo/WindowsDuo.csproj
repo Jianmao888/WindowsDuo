@@ -1,0 +1,168 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <!--
+      目标平台提升到 22621 是为了拿到 Windows.Graphics.Capture（屏幕捕获）。
+      该命名空间在 19041 的 Microsoft.Windows.SDK.NET.Ref 里根本不存在，
+      而 22621 的 ref pack 已在本机 NuGet 缓存中，可以离线构建。
+      注意：这只是"可用的 API 面"，运行期仍会做能力探测并按需降级。
+    -->
+    <TargetFramework>net8.0-windows10.0.22621.0</TargetFramework>
+    <TargetPlatformMinVersion>10.0.22621.0</TargetPlatformMinVersion>
+    <RootNamespace>WindowsDuo</RootNamespace>
+    <ApplicationManifest>app.manifest</ApplicationManifest>
+    <Platforms>x86;x64;ARM64</Platforms>
+    <RuntimeIdentifiers>win-x86;win-x64;win-arm64</RuntimeIdentifiers>
+    <PublishProfile>win-$(Platform).pubxml</PublishProfile>
+    <UseWinUI>true</UseWinUI>
+    <WinUISDKReferences>false</WinUISDKReferences>
+    <EnableMsixTooling>true</EnableMsixTooling>
+    <Nullable>enable</Nullable>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Content Include="Assets\SplashScreen.scale-200.png" />
+    <Content Include="Assets\LockScreenLogo.scale-200.png" />
+    <Content Include="Assets\Square150x150Logo.scale-200.png" />
+    <Content Include="Assets\Square44x44Logo.scale-200.png" />
+    <Content Include="Assets\Square44x44Logo.targetsize-24_altform-unplated.png" />
+    <Content Include="Assets\StoreLogo.png" />
+    <Content Include="Assets\Wide310x150Logo.scale-200.png" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Manifest Include="$(ApplicationManifest)" />
+  </ItemGroup>
+
+  <!--
+    Defining the "Msix" ProjectCapability here allows the Single-project MSIX Packaging
+    Tools extension to be activated for this project even if the Windows App SDK Nuget
+    package has not yet been restored.
+  -->
+  <ItemGroup Condition="'$(DisableMsixProjectCapabilityAddedByProject)'!='true' and '$(EnableMsixTooling)'=='true'">
+    <ProjectCapability Include="Msix" />
+  </ItemGroup>
+  <ItemGroup>
+    <PackageReference Include="Microsoft.Windows.SDK.BuildTools" Version="10.0.28000.2705" />
+    <PackageReference Include="Microsoft.WindowsAppSDK" Version="2.4.0" />
+    <!-- Win2D 提供 CanvasControl / PixelShaderEffect，用于呈现 HLSL 自定义像素着色器 -->
+    <PackageReference Include="Microsoft.Graphics.Win2D" Version="1.4.0" />
+  </ItemGroup>
+
+  <!--
+    DuoLens 自定义着色器资源：
+      * Shaders\DuoLens.hlsl 由 fxc 在构建期编译，本身 C# 不参与编译（生成操作为 None）。
+      * Shaders\DuoLens.bin 是编译产物，作为应用程序的一部分被复制 / 打包。
+  -->
+  <ItemGroup>
+    <None Include="Shaders\DuoLens.hlsl" />
+    <Content Include="Shaders\DuoLens.bin" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+
+  <!--
+    Defining the "HasPackageAndPublishMenuAddedByProject" property here allows the Solution
+    Explorer "Package and Publish" context menu entry to be enabled for this project even if
+    the Windows App SDK Nuget package has not yet been restored.
+  -->
+  <PropertyGroup Condition="'$(DisableHasPackageAndPublishMenuAddedByProject)'!='true' and '$(EnableMsixTooling)'=='true'">
+    <HasPackageAndPublishMenu>true</HasPackageAndPublishMenu>
+  </PropertyGroup>
+
+  <!-- Publish Properties -->
+  <PropertyGroup>
+    <PublishReadyToRun Condition="'$(Configuration)' == 'Debug'">False</PublishReadyToRun>
+    <PublishReadyToRun Condition="'$(Configuration)' != 'Debug'">True</PublishReadyToRun>
+    <PublishTrimmed Condition="'$(Configuration)' == 'Debug'">False</PublishTrimmed>
+    <PublishTrimmed Condition="'$(Configuration)' != 'Debug'">True</PublishTrimmed>
+  </PropertyGroup>
+
+  <!-- ===================================================================================
+       DuoLens 着色器编译：
+       Direct2D 自定义像素着色器需要分两遍编译：
+         1) /T lib_4_0         + D2D_FUNCTION    -> 生成 HLSL 中间库（.fxlib）
+         2) /T ps_4_0          + D2D_FULL_SHADER + /E main + /setprivate -> 生成 .bin
+       fxc.exe 与 d2d1effecthelpers.hlsli 都在 Windows SDK（Windows Kits\10）中，
+       下面的任务会自动选择机器上已安装的任意一版。
+       =================================================================================== -->
+  <PropertyGroup>
+    <DuoShaderSource>$(MSBuildProjectDirectory)\Shaders\DuoLens.hlsl</DuoShaderSource>
+    <DuoShaderOutput>$(MSBuildProjectDirectory)\Shaders\DuoLens.bin</DuoShaderOutput>
+    <DuoShaderFxLib>$(MSBuildProjectDirectory)\Shaders\DuoLens.fxlib</DuoShaderFxLib>
+    <!--
+      Direct2D 的 ID2D1EffectContext::CreatePixelShader 只接受 **shader model 4** 的字节码。
+      用 ps_5_0 编译出来的 blob 同样能通过 fxc，但运行期会被 Win2D 的 PixelShaderEffect
+      构造器拒绝，报 "This should be a Direct3D pixel shader compiled for shader model 4."
+      两遍都必须用 4_x：lib_4_0 生成中间库、ps_4_0 生成立即可用的像素着色器。
+    -->
+    <DuoShaderModel>4_0</DuoShaderModel>
+    <GenerateAppInstallerFile>False</GenerateAppInstallerFile>
+    <AppxPackageSigningEnabled>True</AppxPackageSigningEnabled>
+    <PackageCertificateKeyFile>C:\Users\jianm\Code\FeedCustomizer\FeedCustomizer\FeedCustomizer_TemporaryKey.pfx</PackageCertificateKeyFile>
+    <AppxPackageSigningTimestampDigestAlgorithm>SHA256</AppxPackageSigningTimestampDigestAlgorithm>
+    <AppxAutoIncrementPackageRevision>True</AppxAutoIncrementPackageRevision>
+    <GenerateTestArtifacts>False</GenerateTestArtifacts>
+    <AppxBundle>Never</AppxBundle>
+    <HoursBetweenUpdateChecks>0</HoursBetweenUpdateChecks>
+  </PropertyGroup>
+
+  <UsingTask TaskName="DuoFindShaderToolchain" TaskFactory="RoslynCodeTaskFactory" AssemblyFile="$(MSBuildToolsPath)\Microsoft.Build.Tasks.Core.dll">
+    <ParameterGroup>
+      <FxcPath ParameterType="System.String" Output="true" />
+      <IncludeDir ParameterType="System.String" Output="true" />
+    </ParameterGroup>
+    <Task>
+      <Code Type="Fragment" Language="cs"><![CDATA[
+        FxcPath = "";
+        IncludeDir = "";
+
+        var roots = new[]
+        {
+            System.IO.Path.Combine(System.Environment.GetFolderPath(System.Environment.SpecialFolder.ProgramFilesX86), "Windows Kits", "10"),
+            System.IO.Path.Combine(System.Environment.GetFolderPath(System.Environment.SpecialFolder.ProgramFiles), "Windows Kits", "10"),
+        };
+
+        System.Version best = null;
+        foreach (var root in roots)
+        {
+            var binRoot = System.IO.Path.Combine(root, "bin");
+            var incRoot = System.IO.Path.Combine(root, "Include");
+            if (!System.IO.Directory.Exists(binRoot) || !System.IO.Directory.Exists(incRoot)) continue;
+
+            foreach (var binDir in System.IO.Directory.GetDirectories(binRoot))
+            {
+                var name = System.IO.Path.GetFileName(binDir);
+                System.Version ver;
+                if (!System.Version.TryParse(name, out ver)) continue;
+                if (best != null && ver <= best) continue;
+
+                var fxc = System.IO.Path.Combine(binDir, "x64", "fxc.exe");
+                var um = System.IO.Path.Combine(incRoot, name, "um");
+                if (!System.IO.File.Exists(fxc)) continue;
+                if (!System.IO.File.Exists(System.IO.Path.Combine(um, "d2d1effecthelpers.hlsli"))) continue;
+
+                best = ver;
+                FxcPath = fxc;
+                IncludeDir = um;
+            }
+        }
+      ]]></Code>
+    </Task>
+  </UsingTask>
+
+  <Target Name="DuoCompileShaders" BeforeTargets="PrepareForBuild" Inputs="$(DuoShaderSource)" Outputs="$(DuoShaderOutput)">
+    <DuoFindShaderToolchain>
+      <Output TaskParameter="FxcPath" PropertyName="DuoFxcPath" />
+      <Output TaskParameter="IncludeDir" PropertyName="DuoIncludeDir" />
+    </DuoFindShaderToolchain>
+
+    <Error Condition="'$(DuoFxcPath)' == ''" Text="未找到 fxc.exe 或 d2d1effecthelpers.hlsli，请安装 Windows SDK（Windows Kits\10）的 Include 与 bin 组件。" />
+
+    <Message Importance="high" Text="DuoLens: 正在编译 $(DuoShaderSource)（fxc: $(DuoFxcPath)）" />
+
+    <Exec Command="&quot;$(DuoFxcPath)&quot; &quot;$(DuoShaderSource)&quot; /nologo /T lib_$(DuoShaderModel) /D D2D_FUNCTION /D D2D_ENTRY=main /Fl &quot;$(DuoShaderFxLib)&quot; /I &quot;$(DuoIncludeDir)&quot;" />
+
+    <Exec Command="&quot;$(DuoFxcPath)&quot; &quot;$(DuoShaderSource)&quot; /nologo /T ps_$(DuoShaderModel) /D D2D_FULL_SHADER /D D2D_ENTRY=main /E main /setprivate &quot;$(DuoShaderFxLib)&quot; /Fo:&quot;$(DuoShaderOutput)&quot; /I &quot;$(DuoIncludeDir)&quot;" />
+
+    <Delete Files="$(DuoShaderFxLib)" />
+  </Target>
+</Project>

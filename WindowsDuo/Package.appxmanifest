@@ -1,0 +1,64 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+
+<Package
+  xmlns="http://schemas.microsoft.com/appx/manifest/foundation/windows10"
+  xmlns:mp="http://schemas.microsoft.com/appx/2014/phone/manifest"
+  xmlns:uap="http://schemas.microsoft.com/appx/manifest/uap/windows10"
+  xmlns:uap11="http://schemas.microsoft.com/appx/manifest/uap/windows10/11"
+  xmlns:rescap="http://schemas.microsoft.com/appx/manifest/foundation/windows10/restrictedcapabilities"
+  xmlns:systemai="http://schemas.microsoft.com/appx/manifest/systemai/windows10"
+  IgnorableNamespaces="uap uap11 rescap systemai">
+
+  <!-- 版本号必须在能力/清单变更后递增：否则 VS 部署时可能沿用已注册的旧包，
+       新增的 graphicsCaptureProgrammatic 能力不会真正生效。 -->
+  <Identity
+    Name="bef70aca-a6a9-4c68-8578-d2bfd7e37a2a"
+    Publisher="CN=Jianmao"
+    Version="1.0.14.0" />
+
+  <mp:PhoneIdentity PhoneProductId="bef70aca-a6a9-4c68-8578-d2bfd7e37a2a" PhonePublisherId="00000000-0000-0000-0000-000000000000"/>
+
+  <Properties>
+    <DisplayName>WindowsDuo</DisplayName>
+    <PublisherDisplayName>jianm</PublisherDisplayName>
+    <Logo>Assets\StoreLogo.png</Logo>
+  </Properties>
+
+  <Dependencies>
+    <TargetDeviceFamily Name="Windows.Universal" MinVersion="10.0.19645.0" MaxVersionTested="10.0.26226.0" />
+    <TargetDeviceFamily Name="Windows.Desktop" MinVersion="10.0.17763.0" MaxVersionTested="10.0.26226.0" />
+  </Dependencies>
+
+  <Resources>
+    <Resource Language="x-generate"/>
+  </Resources>
+
+  <Applications>
+    <Application Id="App"
+      Executable="$targetnametoken$.exe"
+      EntryPoint="$targetentrypoint$">
+      <uap:VisualElements
+        DisplayName="WindowsDuo"
+        Description="WindowsDuo"
+        BackgroundColor="transparent"
+        Square150x150Logo="Assets\Square150x150Logo.png"
+        Square44x44Logo="Assets\Square44x44Logo.png">
+        <uap:DefaultTile Wide310x150Logo="Assets\Wide310x150Logo.png" />
+        <uap:SplashScreen Image="Assets\SplashScreen.png" />
+      </uap:VisualElements>
+    </Application>
+  </Applications>
+
+  <Capabilities>
+    <rescap:Capability Name="runFullTrust" />
+    <systemai:Capability Name="systemAIModels"/>
+
+    <!-- 把效果铺满整个屏幕靠 GraphicsCaptureItem.TryCreateFromDisplayId 自己挑显示器。
+         非打包进程只要有隐私总开关的许可就够了，但**打包（MSIX）进程必须在清单里声明
+         graphicsCaptureProgrammatic**，否则该调用会直接以 E_ACCESSDENIED 被拒 ——
+         表现就是叠加层一帧都拿不到、整个屏幕纯黑。
+         graphicsCaptureWithoutBorder 对应 GraphicsCaptureSession.IsBorderRequired。 -->
+    <uap11:Capability Name="graphicsCaptureProgrammatic" />
+    <uap11:Capability Name="graphicsCaptureWithoutBorder" />
+  </Capabilities>
+</Package>

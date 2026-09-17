@@ -1,0 +1,10 @@
+{
+  "profiles": {
+    "WindowsDuo (Package)": {
+      "commandName": "MsixPackage"
+    },
+    "WindowsDuo (Unpackaged)": {
+      "commandName": "Project"
+    }
+  }
+}

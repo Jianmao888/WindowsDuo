@@ -1,0 +1,29 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net8.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(GpuChecks)' == 'true'">
+    <TargetFramework>net8.0-windows10.0.22621.0</TargetFramework>
+    <TargetPlatformMinVersion>10.0.22621.0</TargetPlatformMinVersion>
+    <RuntimeIdentifier>win-x64</RuntimeIdentifier>
+    <WindowsPackageType>None</WindowsPackageType>
+    <WindowsAppSDKSelfContained>true</WindowsAppSDKSelfContained>
+    <DefineConstants>$(DefineConstants);GPU_CHECKS</DefineConstants>
+  </PropertyGroup>
+  <ItemGroup>
+    <Compile Include="../WindowsDuo/Rendering/DuoAttitude.cs" Link="DuoAttitude.cs" />
+    <Compile Include="../WindowsDuo/Rendering/DuoPoseMath.cs" Link="DuoPoseMath.cs" />
+    <Compile Include="../WindowsDuo/Rendering/DuoLensFrame.cs" Link="DuoLensFrame.cs" />
+    <Compile Include="../WindowsDuo/Rendering/DuoLensParameters.cs" Link="DuoLensParameters.cs" />
+    <Compile Include="../WindowsDuo/Rendering/DuoLensMath.cs" Link="DuoLensMath.cs" />
+  </ItemGroup>
+  <ItemGroup Condition="'$(GpuChecks)' == 'true'">
+    <PackageReference Include="Microsoft.WindowsAppSDK" Version="2.4.0" />
+    <PackageReference Include="Microsoft.Graphics.Win2D" Version="1.4.0" />
+    <Compile Include="../WindowsDuo/Rendering/DuoLensShader.cs" Link="DuoLensShader.cs" />
+    <Content Include="../WindowsDuo/Shaders/DuoLens.bin" Link="Shaders/DuoLens.bin" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+</Project>

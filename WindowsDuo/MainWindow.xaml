@@ -1,0 +1,103 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Window
+    x:Class="WindowsDuo.MainWindow"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:canvas="using:Microsoft.Graphics.Canvas.UI.Xaml"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    mc:Ignorable="d"
+    Title="WindowsDuo - Duo Lens 演示">
+
+    <Window.SystemBackdrop>
+        <MicaBackdrop />
+    </Window.SystemBackdrop>
+
+    <Grid Background="{ThemeResource ApplicationPageBackgroundThemeBrush}">
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition x:Name="PreviewColumn" Width="*" />
+            <ColumnDefinition Width="420" />
+        </Grid.ColumnDefinitions>
+
+        <Border x:Name="PreviewPanel" Grid.Column="0" Margin="12" CornerRadius="18" Background="#101419">
+            <canvas:CanvasControl x:Name="DuoCanvas" Draw="OnCanvasDraw" />
+        </Border>
+
+        <ScrollViewer Grid.Column="1" Margin="12,12,12,12">
+            <StackPanel Spacing="12">
+                <TextBlock Text="Duo Lens" FontSize="28" FontWeight="SemiBold" />
+                <TextBlock x:Name="SensorReadoutText" Text="正在等待传感器数据…" TextWrapping="WrapWholeWords" />
+
+                <TextBlock Text="透视投影" FontWeight="SemiBold" />
+                <StackPanel>
+                    <TextBlock Text="视点距离（毫米，0 = 按屏幕自动）" />
+                    <Slider x:Name="EyeDistanceSlider" Minimum="0" Maximum="2000" Value="0" />
+                    <TextBlock x:Name="EyeDistanceValue" Text="自动" />
+                </StackPanel>
+
+                <StackPanel>
+                    <TextBlock Text="每毫米像素数（0 = 按 DPI 自动）" />
+                    <Slider x:Name="PixelsPerMmSlider" Minimum="0" Maximum="20" StepFrequency="0.05" Value="0" />
+                    <TextBlock x:Name="PixelsPerMmValue" Text="自动" />
+                </StackPanel>
+
+                <StackPanel>
+                    <TextBlock Text="模糊扩散系数（半径 ÷ 间隙）" />
+                    <Slider x:Name="BlurScaleSlider" Minimum="0.05" Maximum="1.2" StepFrequency="0.01" Value="0.6" />
+                    <TextBlock x:Name="BlurScaleValue" Text="0.60" />
+                </StackPanel>
+
+                <StackPanel>
+                    <TextBlock Text="最大模糊半径（像素）" />
+                    <Slider x:Name="MaxBlurSlider" Minimum="0" Maximum="160" StepFrequency="1" Value="48" />
+                    <TextBlock x:Name="MaxBlurValue" Text="48 像素" />
+                </StackPanel>
+
+                <StackPanel>
+                    <TextBlock Text="变暗系数（每毫米间隙）" />
+                    <Slider x:Name="DarkenScaleSlider" Minimum="0" Maximum="0.08" StepFrequency="0.001" Value="0.008" />
+                    <TextBlock x:Name="DarkenScaleValue" Text="0.008" />
+                </StackPanel>
+
+                <StackPanel>
+                    <TextBlock Text="边缘羽化（像素）" />
+                    <Slider x:Name="EdgeFeatherSlider" Minimum="0" Maximum="16" StepFrequency="0.5" Value="1.5" />
+                    <TextBlock x:Name="EdgeFeatherValue" Text="1.5 像素" />
+                </StackPanel>
+
+                <TextBlock Text="旋转轴固定为屏幕底边：仅俯仰 X 会驱动画面；左右旋转、滚转和开合读数不会改变画面。靠近的部分放大，远离的部分缩小。"
+                           TextWrapping="WrapWholeWords" />
+
+                <StackPanel>
+                    <TextBlock Text="俯仰每弧度深度偏置（毫米/弧度）" />
+                    <Slider x:Name="DepthBiasSlider" Minimum="0" Maximum="180" Value="20" />
+                    <TextBlock x:Name="DepthBiasValue" Text="20 毫米/弧度" />
+                </StackPanel>
+
+                <TextBlock Text="校准 —— 若在你的设备上效果方向相反，就打开下面的开关"
+                   FontWeight="SemiBold" TextWrapping="WrapWholeWords" />
+                <ToggleSwitch x:Name="InvertTiltXToggle" Header="翻转俯仰方向（X）" />
+
+                <Button x:Name="ResetPoseButton" Content="将当前姿态设为空间参考" />
+                <ToggleSwitch x:Name="DemoAnimationToggle" Header="演示动画" IsOn="True" />
+
+                <TextBlock Text="整屏叠加层（Ctrl+Alt+D 开关）"
+                           FontWeight="SemiBold" TextWrapping="WrapWholeWords" />
+                <TextBlock TextWrapping="WrapWholeWords"
+                           Text="捕获主显示器画面，对它运行同一套透镜级联着色，再把结果透过一个点击穿透的置顶窗口铺回桌面。Windows 没有公开的桌面着色钩子，所以预期会有一两帧延迟。" />
+                <ToggleSwitch x:Name="OverlayToggle" Header="对整块屏幕施加效果" />
+                <ToggleSwitch x:Name="OverlayPassthroughToggle" Header="仅做捕获→铺回（隔离捕获通路）" />
+                <StackPanel>
+                    <TextBlock Text="叠加层渲染倍率（1.0 = 原生分辨率）" />
+                    <Slider x:Name="OverlayScaleSlider" Minimum="0.25" Maximum="1" StepFrequency="0.05" Value="0.35" />
+                    <TextBlock x:Name="OverlayScaleValue" Text="0.35" />
+                </StackPanel>
+                <Button x:Name="SelfCheckButton" Content="重新运行叠加层通路自检" />
+                <TextBlock x:Name="OverlayStatusText"
+                           Text="叠加层尚未启动。"
+                           TextWrapping="WrapWholeWords"
+                           FontSize="12" />
+            </StackPanel>
+        </ScrollViewer>
+    </Grid>
+</Window>
